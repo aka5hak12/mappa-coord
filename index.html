@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mappa Interattiva – Debug</title>
 
-  <!-- Leaflet core -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     html,body{margin:0;padding:0;height:100%}
     #map{height:100vh;width:100%}
-
     .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#00ffff;background:rgba(0,0,0,.65);border-radius:4px;z-index:10000}
-    .leaflet-container{background:#dddddd} /* grigio chiaro per capire se i tile mancano */
+    .leaflet-container{background:#dddddd}   /* grigio: capiremo se mancano i tile */
   </style>
 </head>
 <body>
@@ -22,24 +21,24 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. Inizializza mappa
+    /* 1 – Istanzio la mappa */
     const map=L.map('map').setView([41.9,12.5],6);
 
-    // 2. Tile layer OSM standard (singolo dominio, HTTPS, no API key)
+    /* 2 – Tile layer OSM (HTTPS, nessuna API key) */
     const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
       attribution:'© OpenStreetMap contributors',
       maxZoom:19
     }).addTo(map);
 
-    // Diagnostica: se un tile fallisce lo evidenziamo in console
+    /* Log in console se un tile fallisce */
     osm.on('tileerror', e=>console.warn('Tile error', e.coords));
 
-    // 3. Coordinate centro visibili
+    /* 3 – Box coordinate aggiornato in tempo reale */
     const box=document.getElementById('coordBox');
     function update(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
     map.whenReady(()=>{update();map.on('move',update);});
 
-    // 4. Fix iframe/mobile (ridisegno)
+    /* 4 – Fix dentro iframe / mobile */
     window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),150));
   </script>
 </body>
