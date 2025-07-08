@@ -3,64 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mappa Interattiva</title>
+  <title>Mappa Interattiva – Dark senza API</title>
 
-  <!-- Leaflet CSS -->
+  <!-- Leaflet core -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
-    #map { height: 100vh; width: 100%; }
+    html,body{margin:0;padding:0;height:100%}
+    #map{height:100vh;width:100%}
 
-    /* Box coordinate */
-    .coords {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      padding: 5px 9px;
-      background: rgba(0,0,0,.6);
-      color: #00ffff;
-      font: 13px/1 monospace;
-      border-radius: 4px;
-      z-index: 10000; /* resta sopra qualsiasi tile */
-    }
+    /* box coordinate */
+    .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#00ffff;background:rgba(0,0,0,.65);border-radius:4px;z-index:10000}
+
+    /* forza background scuro dietro ai tile (quando non ancora caricati) */
+    .leaflet-container{background:#202020}
+
+    /* filtro CSS per dare effetto “dark / petrolio” alla basemap standard OSM                       
+       (invertiamo quasi tutto, ruotiamo la tinta verso blu , abbassiamo luminosità e alziamo contrasto) */
+    .leaflet-tile{filter:invert(90%) hue-rotate(190deg) brightness(.8) contrast(1.15) saturate(.7)}
   </style>
 </head>
 <body>
   <div id="map"></div>
-  <div class="coords" id="coordBox">Lat: —, Lng: —</div>
+  <div id="coordBox" class="coords">Lat: —, Lng: —</div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
-    // Inizializza la mappa al centro dell'Italia
-    const map = L.map('map').setView([41.9, 12.5], 6);
+    // 1. Istanzio la mappa
+    const map=L.map('map').setView([41.9,12.5],6);
 
-    // Basemap dark ma leggibile (Stamen Toner Lite)
-    L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://stamen.com">Stamen</a>, &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
-      maxZoom: 20
+    // 2. Tile layer OpenStreetMap (sempre disponibile, no key)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap contributors',
+      maxZoom:19
     }).addTo(map);
 
-    // ----- Coordinate centro -----
-    const coordBox = document.getElementById('coordBox');
+    // 3. Box coordinate aggiornato in tempo reale
+    const box=document.getElementById('coordBox');
+    function update(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
+    map.whenReady(()=>{update();map.on('move',update);});
 
-    function updateCoords() {
-      const c = map.getCenter();
-      coordBox.innerHTML = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
-    }
-
-    // Aggiorna quando la mappa è pronta e ad ogni movimento
-    map.whenReady(() => {
-      updateCoords();
-      map.on('move', updateCoords);
-    });
-
-    // Fix per rendering corretto dentro iframe / dispositivi mobili
-    window.addEventListener('load', () => {
-      setTimeout(() => map.invalidateSize(), 100);
-    });
+    // 4. Fix rendering dentro iframe/mobile
+    window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),100));
   </script>
 </body>
 </html>
