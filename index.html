@@ -7,15 +7,24 @@
 
   <!-- Leaflet core -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- Leaflet-control-geocoder CSS -->
+  <!-- Geocoder CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 
   <style>
-    html,body{margin:0;padding:0;height:100%}
-    #map{height:100vh;width:100%}
-
-    .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#00ffff;background:rgba(0,0,0,.65);border-radius:4px;z-index:10000}
-    .leaflet-container{background:#dddddd}
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100vh; width: 100%; }
+    .coords {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      padding: 6px 10px;
+      font: 13px monospace;
+      color: #00ffff;
+      background: rgba(0,0,0,.65);
+      border-radius: 4px;
+      z-index: 10000;
+    }
+    .leaflet-container { background: #dddddd; }
   </style>
 </head>
 <body>
@@ -24,37 +33,41 @@
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- Leaflet-control-geocoder JS (usa Photon / Nominatim, no API key) -->
+  <!-- Geocoder JS -->
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
   <script>
-    /* 1 – Inizializza la mappa */
-    const map=L.map('map').setView([41.9,12.5],6);
+    const map = L.map('map').setView([41.9, 12.5], 6);
 
-    /* 2 – Tile layer OSM standard */
-    const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      attribution:'© OpenStreetMap contributors',
-      maxZoom:19
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19
     }).addTo(map);
 
-    /* 3 – Barra di ricerca */
+    // Barra di ricerca
     L.Control.geocoder({
-      position:'topleft',        // dove mettere la barra
-      defaultMarkGeocode:false   // non inserire marker automatico
+      defaultMarkGeocode: false,
+      placeholder: 'Cerca un luogo...',
+      position: 'topleft'
     })
-    .on('markgeocode', e=>{
-      const c=e.geocode.center;
-      map.setView(c, 14);        // zoom sul risultato
+    .on('markgeocode', function(e) {
+      map.setView(e.geocode.center, 14);
     })
     .addTo(map);
 
-    /* 4 – Box coordinate in diretta */
-    const box=document.getElementById('coordBox');
-    function update(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
-    map.whenReady(()=>{update();map.on('move',update);});
+    // Coordinate in tempo reale
+    const box = document.getElementById('coordBox');
+    function updateCoords() {
+      const c = map.getCenter();
+      box.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
+    }
 
-    /* 5 – Fix iframe/mobile */
-    window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),150));
+    map.whenReady(() => {
+      updateCoords();
+      map.on('move', updateCoords);
+    });
+
+    window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 150));
   </script>
 </body>
 </html>
