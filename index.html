@@ -11,6 +11,14 @@ html,body{margin:0;padding:0;height:100%}
 #map{height:100vh;width:100%}
 .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#00ffff;background:rgba(0,0,0,.65);border-radius:4px;z-index:10000}
 .leaflet-container{background:#dddddd}
+/* sposta la barra di ricerca sopra le coordinate */
+.leaflet-control-geocoder.leaflet-bar{
+  position:absolute!important;
+  bottom:50px!important; /* 10px (coords) + 40px (altezza input) */
+  left:10px!important;
+  right:auto!important;
+  top:auto!important;
+}
 </style>
 </head>
 <body>
@@ -21,7 +29,7 @@ html,body{margin:0;padding:0;height:100%}
 <script>
 const map=L.map('map').setView([41.9,12.5],6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
-L.Control.geocoder({defaultMarkGeocode:false,placeholder:'Cerca un luogo...',position:'topleft'}).on('markgeocode',e=>map.setView(e.geocode.center,14)).addTo(map);
+L.Control.geocoder({defaultMarkGeocode:false,placeholder:'Cerca un luogo...',position:'bottomleft'}).on('markgeocode',e=>map.setView(e.geocode.center,14)).addTo(map);
 const box=document.getElementById('coordBox');
 function update(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
 map.whenReady(()=>{update();map.on('move',update);});
