@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mappa Interattiva con Ricerca</title>
 
-  <!-- Leaflet core -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Geocoder CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
@@ -39,23 +39,25 @@
   <script>
     const map = L.map('map').setView([41.9, 12.5], 6);
 
+    // Tile layer base
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
     // Barra di ricerca
-    L.Control.geocoder({
+    const geocoder = L.Control.geocoder({
       defaultMarkGeocode: false,
       placeholder: 'Cerca un luogo...',
       position: 'topleft'
     })
     .on('markgeocode', function(e) {
-      map.setView(e.geocode.center, 14);
+      const center = e.geocode.center;
+      map.setView(center, 14);
     })
     .addTo(map);
 
-    // Coordinate in tempo reale
+    // Coordinate aggiornate in tempo reale
     const box = document.getElementById('coordBox');
     function updateCoords() {
       const c = map.getCenter();
