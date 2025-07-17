@@ -9,8 +9,17 @@
   <style>
     html,body{margin:0;padding:0;height:100%}
     #map{height:100vh;width:100%;position:relative}
-    /* viratura blu-notte: invert → hue-rotate 260° → leggera saturazione e contrasto */
-    .leaflet-tile{filter:invert(82%) hue-rotate(260deg) saturate(1.2) brightness(0.9) contrast(1.1)}
+
+    /* filtro: blu-notte  – mari navy, strade in ciano/azzurro tenue */
+    .leaflet-tile{
+      filter:
+        invert(82%)           /* base dark */
+        hue-rotate(210deg)    /* vira verdi → blu */
+        saturate(1.4)
+        brightness(0.88)
+        contrast(1.15);
+    }
+
     .coords{
       position:absolute;bottom:10px;left:10px;
       padding:6px 10px;font:13px monospace;
@@ -41,8 +50,10 @@
   <script>
     const map=L.map('map').setView([41.9,12.5],6);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-      attribution:'&copy; CARTO &copy; OSM',subdomains:'abcd',maxZoom:19}).addTo(map);
+    L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      { attribution:'&copy; CARTO &copy; OSM', subdomains:'abcd', maxZoom:19 }
+    ).addTo(map);
 
     L.Control.geocoder({
       defaultMarkGeocode:false,
@@ -51,7 +62,10 @@
     }).on('markgeocode',e=>map.setView(e.geocode.center,14)).addTo(map);
 
     const box=document.getElementById('coordBox');
-    function upd(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
+    function upd(){
+      const c=map.getCenter();
+      box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
+    }
     map.whenReady(()=>{upd();map.on('move',upd);});
     window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),120));
   </script>
