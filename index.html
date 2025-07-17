@@ -2,45 +2,49 @@
 <html lang="it">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mappa</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mappa Interattiva</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; }
-    #map { height: 100vh; width: 100%; }
-    .center-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 40px;
-      transform: translate(-50%, -100%);
-      pointer-events: none;
-      z-index: 999;
-    }
+    #map { height: 100vh; width: 100%; position: relative; }
     .coords {
       position: absolute;
       bottom: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.6);
-      color: #00ffff;
-      font: 13px monospace;
       padding: 6px 10px;
+      font: 13px monospace;
+      color: #00ffff;
+      background: rgba(0, 0, 0, 0.65);
       border-radius: 4px;
-      z-index: 999;
+      z-index: 1000;
     }
     .leaflet-control-geocoder.leaflet-bar {
+      position: absolute !important;
       bottom: 50px !important;
       left: 10px !important;
       top: auto !important;
       right: auto !important;
     }
+    .center-marker {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background-color: magenta;
+      transform: translate(-50%, -50%);
+      border-radius: 2px;
+      z-index: 999;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
   <div id="map">
-    <img src="https://leafletjs.com/examples/custom-icons/leaf-red.png" class="center-icon" alt="center marker" />
-    <div class="coords" id="coordBox">Lat: —, Lng: —</div>
+    <div class="center-marker"></div>
+    <div id="coordBox" class="coords">Lat: —, Lng: —</div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -48,7 +52,7 @@
   <script>
     const map = L.map('map').setView([41.9, 12.5], 6);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19
@@ -56,9 +60,11 @@
 
     L.Control.geocoder({
       defaultMarkGeocode: false,
-      placeholder: 'Cerca...',
+      placeholder: 'Cerca un luogo...',
       position: 'bottomleft'
-    }).on('markgeocode', e => map.setView(e.geocode.center, 14)).addTo(map);
+    })
+    .on('markgeocode', e => map.setView(e.geocode.center, 14))
+    .addTo(map);
 
     const box = document.getElementById('coordBox');
     function updateCoords() {
@@ -71,7 +77,9 @@
       map.on('move', updateCoords);
     });
 
-    window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 100));
+    window.addEventListener('load', () => {
+      setTimeout(() => map.invalidateSize(), 150);
+    });
   </script>
 </body>
 </html>
