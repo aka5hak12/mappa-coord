@@ -9,7 +9,7 @@
   <style>
     html,body{margin:0;padding:0;height:100%}
     #map{height:100vh;width:100%;position:relative}
-    .leaflet-tile{filter:invert(85%) hue-rotate(180deg) saturate(0.8) brightness(0.9)}
+    .leaflet-tile{filter:invert(85%) hue-rotate(200deg) saturate(1.4) brightness(0.9)}
     .coords{
       position:absolute;bottom:10px;left:10px;
       padding:6px 10px;font:13px monospace;
@@ -34,12 +34,15 @@
     <div class="center-box"></div>
     <div id="coordBox" class="coords">Lat: —, Lng: —</div>
   </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
     const map=L.map('map').setView([41.9,12.5],6);
+
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
       attribution:'&copy; CARTO &copy; OSM',subdomains:'abcd',maxZoom:19}).addTo(map);
+
     L.Control.geocoder({
       defaultMarkGeocode:false,
       placeholder:'Cerca…',
