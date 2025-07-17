@@ -7,35 +7,40 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
   <style>
-    html,body{margin:0;padding:0;height:100%}
-    #map{height:100vh;width:100%;position:relative}
+    html, body { margin: 0; padding: 0; height: 100% }
+    #map { height: 100vh; width: 100%; position: relative }
 
-    /* blu–notte: mare blu, strade azzurro/ciano */
-    .leaflet-tile{
-      filter:
-        invert(85%)
-        sepia(25%)
-        hue-rotate(75deg)
-        saturate(2)
-        brightness(0.9)
-        contrast(1.15);
+    .coords {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      padding: 6px 10px;
+      font: 13px monospace;
+      color: #e7354a;
+      background: rgba(0,0,0,0.6);
+      border-radius: 4px;
+      z-index: 1000;
     }
 
-    .coords{
-      position:absolute;bottom:10px;left:10px;
-      padding:6px 10px;font:13px monospace;
-      color:#e7354a;background:rgba(0,0,0,.6);
-      border-radius:4px;z-index:1000;
+    .leaflet-control-geocoder.leaflet-bar {
+      position: absolute !important;
+      bottom: 50px !important;
+      left: 10px !important;
+      top: auto !important;
+      right: auto !important;
     }
-    .leaflet-control-geocoder.leaflet-bar{
-      position:absolute!important;bottom:50px!important;
-      left:10px!important;top:auto!important;right:auto!important;
-    }
-    .center-box{
-      position:absolute;top:50%;left:50%;
-      width:12px;height:12px;background:#e7354a;
-      transform:translate(-50%,-50%);
-      border-radius:2px;pointer-events:none;z-index:999;
+
+    .center-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: #e7354a;
+      transform: translate(-50%, -50%);
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 999;
     }
   </style>
 </head>
@@ -48,26 +53,31 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
-    const map=L.map('map').setView([41.9,12.5],6);
+    const map = L.map('map').setView([43.77, 11.25], 7);
 
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      {attribution:'&copy; CARTO &copy; OSM',subdomains:'abcd',maxZoom:19}
-    ).addTo(map);
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
+      attribution: '&copy; Stadia Maps, &copy; OpenMapTiles &copy; OpenStreetMap contributors'
+    }).addTo(map);
 
     L.Control.geocoder({
-      defaultMarkGeocode:false,
-      placeholder:'Cerca…',
-      position:'bottomleft'
-    }).on('markgeocode',e=>map.setView(e.geocode.center,14)).addTo(map);
+      defaultMarkGeocode: false,
+      placeholder: 'Cerca…',
+      position: 'bottomleft'
+    }).on('markgeocode', e => map.setView(e.geocode.center, 14)).addTo(map);
 
-    const box=document.getElementById('coordBox');
-    function upd(){
-      const c=map.getCenter();
-      box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
+    const box = document.getElementById('coordBox');
+    function updateCoords() {
+      const c = map.getCenter();
+      box.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
     }
-    map.whenReady(()=>{upd();map.on('move',upd);});
-    window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),120));
+
+    map.whenReady(() => {
+      updateCoords();
+      map.on('move', updateCoords);
+    });
+
+    window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 120));
   </script>
 </body>
 </html>
