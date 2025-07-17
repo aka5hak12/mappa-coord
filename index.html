@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mappa Interattiva</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
   <style>
     html,body{margin:0;padding:0;height:100%}
     #map{height:100vh;width:100%;position:relative}
-    .leaflet-container{background:#111}
-    .leaflet-tile{filter:brightness(1.2) saturate(1.1);}
+    .leaflet-tile{filter:invert(85%) hue-rotate(180deg) saturate(0.8) brightness(0.9)}
     .coords{
       position:absolute;bottom:10px;left:10px;
       padding:6px 10px;font:13px monospace;
-      color:#00ffff;background:rgba(0,0,0,.6);
+      color:#e7354a;background:rgba(0,0,0,.6);
       border-radius:4px;z-index:1000
     }
     .leaflet-control-geocoder.leaflet-bar{
@@ -24,7 +23,7 @@
     }
     .center-box{
       position:absolute;top:50%;left:50%;
-      width:12px;height:12px;background:#ff00ff;
+      width:12px;height:12px;background:#e7354a;
       transform:translate(-50%,-50%);
       border-radius:2px;pointer-events:none;z-index:999
     }
@@ -35,17 +34,12 @@
     <div class="center-box"></div>
     <div id="coordBox" class="coords">Lat: —, Lng: —</div>
   </div>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
   <script>
-    const map = L.map('map').setView([41.9,12.5],6);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-      attribution:'&copy; CARTO &copy; OpenStreetMap',
-      subdomains:'abcd', maxZoom:19
-    }).addTo(map);
-
+    const map=L.map('map').setView([41.9,12.5],6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+      attribution:'&copy; CARTO &copy; OSM',subdomains:'abcd',maxZoom:19}).addTo(map);
     L.Control.geocoder({
       defaultMarkGeocode:false,
       placeholder:'Cerca…',
@@ -55,7 +49,7 @@
     const box=document.getElementById('coordBox');
     function upd(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
     map.whenReady(()=>{upd();map.on('move',upd);});
-    window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),150));
+    window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),120));
   </script>
 </body>
 </html>
