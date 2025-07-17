@@ -10,13 +10,14 @@
     html,body{margin:0;padding:0;height:100%}
     #map{height:100vh;width:100%;position:relative}
 
-    /* blu-notte + strade azzurro/ciano */
+    /* mare blu, strade azzurro-ciano, sfondo dark */
     .leaflet-tile{
       filter:
-        invert(80%)          /* base dark */
-        hue-rotate(240deg)   /* porta il verde > blu */
-        saturate(1.6)        /* strade più vive */
-        brightness(0.9)
+        invert(90%)           /* base dark                           */
+        sepia(30%)            /* riduce residuo marrone              */
+        hue-rotate(145deg)    /* verde→azzurro / giallo→ciano        */
+        saturate(1.8)
+        brightness(0.85)
         contrast(1.2);
     }
 
