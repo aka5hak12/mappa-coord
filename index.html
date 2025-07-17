@@ -1,38 +1,84 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Mappa Interattiva con Foglia Centrale</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
-<style>
-html,body{margin:0;padding:0;height:100%}
-#map{height:100vh;width:100%;position:relative}
-.coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#00ffff;background:rgba(0,0,0,.65);border-radius:4px;z-index:10000}
-.leaflet-container{background:#dddddd}
-.leaflet-control-geocoder.leaflet-bar{position:absolute!important;bottom:50px!important;left:10px!important;top:auto!important;right:auto!important}
-.center-leaf{position:absolute;top:50%;left:50%;width:40px;height:auto;transform:translate(-50%,-100%);pointer-events:none;z-index:5000}
-</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mappa Interattiva con Foglia Centrale</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css"/>
+  <style>
+    html, body {margin: 0; padding: 0; height: 100%;}
+    #map {height: 100vh; width: 100%; position: relative;}
+    .coords {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      padding: 6px 10px;
+      font: 13px monospace;
+      color: #00ffff;
+      background: rgba(0, 0, 0, 0.65);
+      border-radius: 4px;
+      z-index: 10000;
+    }
+    .leaflet-container {background: #111;}
+    .leaflet-control-geocoder.leaflet-bar {
+      position: absolute !important;
+      bottom: 50px !important;
+      left: 10px !important;
+      top: auto !important;
+      right: auto !important;
+    }
+    .center-leaf {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 40px;
+      height: auto;
+      transform: translate(-50%, -100%);
+      pointer-events: none;
+      z-index: 5000;
+    }
+  </style>
 </head>
 <body>
-<div id="map">
-  <img src="https://leafletjs.com/examples/custom-icons/leaf-red.png" class="center-leaf" alt="leaf"/>
-  <div id="coordBox" class="coords">Lat: —, Lng: —</div>
-</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-<script>
-const map=L.map('map').setView([41.9,12.5],6);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap contributors',maxZoom:19}).addTo(map);
-L.Control.geocoder({defaultMarkGeocode:false,placeholder:'Cerca un luogo...',position:'bottomleft'})
- .on('markgeocode',e=>map.setView(e.geocode.center,14))
- .addTo(map);
+  <div id="map">
+    <img src="https://leafletjs.com/examples/custom-icons/leaf-red.png" class="center-leaf" alt="leaf"/>
+    <div id="coordBox" class="coords">Lat: —, Lng: —</div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+  <script>
+    const map = L.map('map').setView([41.9, 12.5], 6);
 
-const box=document.getElementById('coordBox');
-function update(){const c=map.getCenter();box.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
-map.whenReady(()=>{update();map.on('move',update);});
-window.addEventListener('load',()=>setTimeout(()=>map.invalidateSize(),150));
-</script>
+    // Mappa dark
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Ricerca
+    L.Control.geocoder({
+      defaultMarkGeocode: false,
+      placeholder: 'Cerca un luogo...',
+      position: 'bottomleft'
+    })
+    .on('markgeocode', e => map.setView(e.geocode.center, 14))
+    .addTo(map);
+
+    // Coordinate
+    const box = document.getElementById('coordBox');
+    function update() {
+      const c = map.getCenter();
+      box.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
+    }
+    map.whenReady(() => {
+      update();
+      map.on('move', update);
+    });
+
+    // Fix visualizzazione su caricamento
+    window.addEventListener('load', () => setTimeout(() => map.invalidateSize(), 150));
+  </script>
 </body>
 </html>
