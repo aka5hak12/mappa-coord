@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Mappa Stadia Dark + Rilievo Vegetazione</title>
+<title>Mappa Dark Rilievo Vegetazione</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-html,body{margin:0;padding:0;height:100%;background:#000;}
+html,body{margin:0;padding:0;height:100%;background:#000;font-family:sans-serif;}
 #map{position:relative;height:100vh;width:100%;}
 .center-box{position:absolute;top:50%;left:50%;width:12px;height:12px;background:#e7354a;transform:translate(-50%,-50%);pointer-events:none;z-index:500;box-shadow:0 0 8px #e7354a;}
 .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#e7354a;background:rgba(0,0,0,.6);border-radius:4px;z-index:600;pointer-events:none;}
@@ -20,17 +20,19 @@ html,body{margin:0;padding:0;height:100%;background:#000;}
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/osmtogeojson@3.0.0/osmtogeojson.js"></script>
+<script src="https://unpkg.com/leaflet-providers@1.13.0/leaflet-providers.js"></script>
 <script>
-const STADIA_KEY='INSERISCI_LA_TUA_API_KEY';
 const map=L.map('map',{center:[43.77,11.25],zoom:9,minZoom:2,maxZoom:18});
-L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key='+STADIA_KEY,{
-  maxZoom:20,
-  attribution:'&copy; OpenMapTiles &copy; OpenStreetMap contributors &copy; Stadia Maps'
-}).addTo(map);
+L.tileLayer.provider('CartoDB.DarkMatter').addTo(map);
+map.createPane('shade');
+map.getPane('shade').style.mixBlendMode='screen';
+map.getPane('shade').style.opacity='0.85';
+map.getPane('shade').style.filter='brightness(1.55) contrast(1.2)';
+L.tileLayer('https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png',{pane:'shade',attribution:'Hillshade'}).addTo(map);
 const coordBox=document.getElementById('coordBox');
 function upd(){const c=map.getCenter();coordBox.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
 map.on('move',upd);map.whenReady(()=>{upd();setTimeout(()=>map.invalidateSize(),120);});
-const forestsLayer=L.geoJSON(null,{style:()=>({color:'#18a34c',weight:1,opacity:0.55,fillColor:'#1bd55c',fillOpacity:0.22})}).addTo(map);
+const vegetationLayer=L.geoJSON(null,{style:()=>({color:'#1fa458',weight:0.7,opacity:0.55,fillColor:'#27d071',fillOpacity:0.28})}).addTo(map);
 const peaksLayer=L.geoJSON(null,{pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:4,fillColor:'#e7354a',color:'#e7354a',weight:1,fillOpacity:0.9})}).addTo(map);
 let pending=null,lastBBox=null;
 function loadData(){
@@ -56,18 +58,17 @@ function loadData(){
     .then(r=>r.json())
     .then(data=>{
       const gj=osmtogeojson(data);
-      const forests={type:'FeatureCollection',features:gj.features.filter(f=>{
+      const veg={type:'FeatureCollection',features:gj.features.filter(f=>{
         const p=f.properties||{};
         return (p.landuse==='forest'||p.natural==='wood'||p.natural==='scrub'||p.natural==='grassland') && /Polygon/.test(f.geometry.type);
       })};
       const peaks={type:'FeatureCollection',features:gj.features.filter(f=>{
-        const p=f.properties||{};
-        return p.natural==='peak' && f.geometry && f.geometry.type==='Point';
+        const p=f.properties||{};return p.natural==='peak'&&f.geometry&&f.geometry.type==='Point';
       })};
-      forestsLayer.clearLayers();forestsLayer.addData(forests);
+      vegetationLayer.clearLayers();vegetationLayer.addData(veg);
       peaksLayer.clearLayers();peaksLayer.addData(peaks);
     })
-    .catch(_=>{});
+    .catch(()=>{});
 }
 function schedule(){if(pending)clearTimeout(pending);pending=setTimeout(loadData,450);}
 map.on('moveend',schedule);
