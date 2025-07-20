@@ -2,47 +2,77 @@
 <html lang="it">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Mappa Interattiva</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mappa Nero Mare Blu Montagne Verdi</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  html,body { margin:0; padding:0; height:100% }
-  #map { position:relative; height:100vh; width:100% }
+  html,body {margin:0;padding:0;height:100%;background:#000;}
+  #map {position:relative;height:100vh;width:100%;}
   .coords {
-    position:absolute; bottom:10px; left:10px;
-    padding:6px 10px; font:13px monospace;
-    color:rgb(231,53,74); background:rgba(0,0,0,0.6);
-    border-radius:4px; z-index:1000;
+    position:absolute;bottom:10px;left:10px;
+    padding:6px 10px;font:13px monospace;
+    color:#e7354a;background:rgba(0,0,0,.6);
+    border-radius:4px;z-index:1000;
   }
   .center-box {
-    position:absolute; top:50%; left:50%;
-    width:12px; height:12px;
-    background:rgb(231,53,74);
+    position:absolute;top:50%;left:50%;
+    width:12px;height:12px;background:#e7354a;
     transform:translate(-50%,-50%);
-    pointer-events:none; z-index:999;
+    pointer-events:none;z-index:999;
+    box-shadow:0 0 8px #e7354a;
   }
 </style>
 </head>
 <body>
-  <div id="map">
-    <div class="center-box"></div>
-    <div id="coordBox" class="coords">Lat: –, Lng: –</div>
-  </div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-providers/leaflet-providers.js"></script>
-  <script>
-    const map = L.map('map').setView([43.77,11.25],7);
-    L.tileLayer.provider('CartoDB.DarkMatter').addTo(map);
-    const box = document.getElementById('coordBox');
-    function update(){
-      const c = map.getCenter();
-      box.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
-    }
-    map.whenReady(()=>{
-      update();
-      map.on('move', update);
-    });
-    window.addEventListener('load', ()=>setTimeout(()=>map.invalidateSize(),150));
-  </script>
+<div id="map">
+  <div class="center-box"></div>
+  <div id="coordBox" class="coords">Lat: –, Lng: –</div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.vectorgrid/dist/Leaflet.VectorGrid.bundled.js"></script>
+<script>
+  const map = L.map('map',{center:[43.77,11.25],zoom:7,zoomControl:true,minZoom:2,maxZoom:14,preferCanvas:true});
+  const coordBox = document.getElementById('coordBox');
+  function update(){
+    const c = map.getCenter();
+    coordBox.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
+  }
+  map.on('move', update);
+  map.whenReady(update);
+  const key = 'YOUR_MAPTILER_KEY';
+  const url = 'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=' + key;
+  const vt = L.vectorGrid.protobuf(url,{
+    maxNativeZoom:14,
+    vectorTileLayerStyles:{
+      water: function(p,z){ return {fill:true,fillColor:'#0d55c9',fillOpacity:1,stroke:false}; },
+      landcover: function(p,z){
+        const c = p.class;
+        if(['forest','wood','grass','scrub','park'].includes(c)) return {fill:true,fillColor:'#0d7d35',fillOpacity:0.5,stroke:false};
+        if(c==='glacier') return {fill:true,fillColor:'#4fe3ff',fillOpacity:0.5,stroke:false};
+        if(c==='rock') return {fill:true,fillColor:'#18763a',fillOpacity:0.5,stroke:false};
+        return {fill:false,stroke:false};
+      },
+      landuse: function(p,z){
+        const c = p.class;
+        if(['forest','nature_reserve'].includes(c)) return {fill:true,fillColor:'#0d7d35',fillOpacity:0.45,stroke:false};
+        return {fill:false,stroke:false};
+      },
+      mountain_peak: function(p,z){ return {radius:2,weight:0,fill:true,fillColor:'#ffffff'}; },
+      transportation: function(p,z){ return {weight:1,color:'#2c2c2c',opacity:0.7}; },
+      transportation_name: function(p,z){ return {weight:0,opacity:0}; },
+      boundary: function(p,z){ return {color:'#303030',weight:1,opacity:0.5}; },
+      place: function(p,z){ return {weight:0,opacity:0}; },
+      housenumber: function(p,z){ return {weight:0,opacity:0}; },
+      poi: function(p,z){ return {weight:0,opacity:0}; },
+      water_name: function(p,z){ return {weight:0,opacity:0}; },
+      aeroway: function(p,z){ return {weight:1,color:'#444',opacity:0.4}; },
+      building: function(p,z){ return {fill:true,fillColor:'#111',fillOpacity:0.6,stroke:false}; },
+      park: function(p,z){ return {fill:true,fillColor:'#0d7d35',fillOpacity:0.45,stroke:false}; },
+      earth: function(p,z){ return {fill:true,fillColor:'#000000',fillOpacity:1,stroke:false}; }
+    },
+    attribution: '&copy; OpenMapTiles &copy; OpenStreetMap contributors'
+  }).addTo(map);
+  window.addEventListener('load', ()=>setTimeout(()=>map.invalidateSize(),150));
+</script>
 </body>
 </html>
