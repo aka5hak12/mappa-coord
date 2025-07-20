@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Mappa Dark con Rilievo Evidenziato</title>
+<title>Mappa Stadia Dark + Rilievo Vegetazione</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 html,body{margin:0;padding:0;height:100%;background:#000;}
@@ -19,22 +19,59 @@ html,body{margin:0;padding:0;height:100%;background:#000;}
   <div id="coordBox" class="coords">Lat: –, Lng: –</div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/osmtogeojson@3.0.0/osmtogeojson.js"></script>
 <script>
-const map=L.map('map',{center:[43.77,11.25],zoom:8,minZoom:2,maxZoom:18});
-const dark=L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-  attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19
-}).addTo(map);
-const hillshadePane=map.createPane('hillshade');
-hillshadePane.style.mixBlendMode='screen';
-hillshadePane.style.opacity='0.7';
-hillshadePane.style.filter='brightness(1.6) contrast(1.25)';
-const hillshade=L.tileLayer('https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png',{
-  pane:'hillshade',attribution:'Hillshade: Wikimedia'
+const STADIA_KEY='INSERISCI_LA_TUA_API_KEY';
+const map=L.map('map',{center:[43.77,11.25],zoom:9,minZoom:2,maxZoom:18});
+L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key='+STADIA_KEY,{
+  maxZoom:20,
+  attribution:'&copy; OpenMapTiles &copy; OpenStreetMap contributors &copy; Stadia Maps'
 }).addTo(map);
 const coordBox=document.getElementById('coordBox');
 function upd(){const c=map.getCenter();coordBox.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
-map.on('move',upd);
-map.whenReady(()=>{upd(); setTimeout(()=>map.invalidateSize(),120);});
+map.on('move',upd);map.whenReady(()=>{upd();setTimeout(()=>map.invalidateSize(),120);});
+const forestsLayer=L.geoJSON(null,{style:()=>({color:'#18a34c',weight:1,opacity:0.55,fillColor:'#1bd55c',fillOpacity:0.22})}).addTo(map);
+const peaksLayer=L.geoJSON(null,{pointToLayer:(f,latlng)=>L.circleMarker(latlng,{radius:4,fillColor:'#e7354a',color:'#e7354a',weight:1,fillOpacity:0.9})}).addTo(map);
+let pending=null,lastBBox=null;
+function loadData(){
+  if(map.getZoom()<8)return;
+  const b=map.getBounds();
+  const bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(v=>v.toFixed(4)).join(',');
+  if(bbox===lastBBox)return;
+  lastBBox=bbox;
+  const q=`[out:json][timeout:25];
+  (
+    way["landuse"="forest"](${bbox});
+    relation["landuse"="forest"](${bbox});
+    way["natural"="wood"](${bbox});
+    relation["natural"="wood"](${bbox});
+    way["natural"="scrub"](${bbox});
+    relation["natural"="scrub"](${bbox});
+    way["natural"="grassland"](${bbox});
+    relation["natural"="grassland"](${bbox});
+    node["natural"="peak"](${bbox});
+  );
+  out body;>;out skel qt;`;
+  fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:q})
+    .then(r=>r.json())
+    .then(data=>{
+      const gj=osmtogeojson(data);
+      const forests={type:'FeatureCollection',features:gj.features.filter(f=>{
+        const p=f.properties||{};
+        return (p.landuse==='forest'||p.natural==='wood'||p.natural==='scrub'||p.natural==='grassland') && /Polygon/.test(f.geometry.type);
+      })};
+      const peaks={type:'FeatureCollection',features:gj.features.filter(f=>{
+        const p=f.properties||{};
+        return p.natural==='peak' && f.geometry && f.geometry.type==='Point';
+      })};
+      forestsLayer.clearLayers();forestsLayer.addData(forests);
+      peaksLayer.clearLayers();peaksLayer.addData(peaks);
+    })
+    .catch(_=>{});
+}
+function schedule(){if(pending)clearTimeout(pending);pending=setTimeout(loadData,450);}
+map.on('moveend',schedule);
+map.whenReady(schedule);
 </script>
 </body>
 </html>
