@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Mappa personalizzata (nero + mare blu + montagne verdi)</title>
-
+<title>Mappa personalizzata</title>
 <link href="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.css" rel="stylesheet">
 <style>
   html,body {height:100%; margin:0; padding:0; background:#000;}
@@ -29,7 +28,6 @@
     z-index:5;
     pointer-events:none;
   }
-  /* Rimuove logo default (se non lo vuoi, mantieni l'attribuzione testuale) */
   .maplibregl-ctrl-logo { display:none !important; }
   .maplibregl-ctrl-attrib {
     background:rgba(0,0,0,.55);
@@ -41,20 +39,17 @@
 <div id="map"></div>
 <div class="center-box"></div>
 <div id="coords" class="coord-box">Lat: –, Lng: –</div>
-
 <script src="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.js"></script>
 <script>
-  // Inizializza la mappa
   const map = new maplibregl.Map({
     container: 'map',
     style: 'https://api.maptiler.com/maps/dark/style.json?key=YOUR_MAPTILER_KEY',
-    center: [11.25, 43.77], // lng, lat
+    center: [11.25, 43.77],
     zoom: 7,
     pitch: 0,
     attributionControl: true
   });
 
-  // Aggiorna box coordinate al centro
   const coordBox = document.getElementById('coords');
   function updateCenterCoords(){
     const c = map.getCenter();
@@ -63,37 +58,20 @@
 
   map.on('load', () => {
     updateCenterCoords();
-
-    // ---- PERSONALIZZAZIONI COLORI ----
-
-    // 1. Sfondo ancora più nero (layer "background" se esiste)
     const bgLayer = map.getStyle().layers.find(l => l.type === 'background');
     if(bgLayer){
       map.setPaintProperty(bgLayer.id, 'background-color', '#000000');
     }
-
-    // 2. Mare blu intenso
-    //   I layer d'acqua nei temi MapTiler hanno id tipicamente 'water' e 'waterway-*'
-    const waterLayers = map.getStyle().layers.filter(l => 
-      (l.type === 'fill' || l.type === 'line') && /water/.test(l.id)
-    );
+    const waterLayers = map.getStyle().layers.filter(l => (l.type === 'fill' || l.type === 'line') && /water/.test(l.id));
     waterLayers.forEach(l => {
-      // fill
       if(l.type === 'fill'){
-        map.setPaintProperty(l.id,'fill-color','#0d55c9'); // blu
+        map.setPaintProperty(l.id,'fill-color','#0d55c9');
         map.setPaintProperty(l.id,'fill-opacity',1);
       }
-      // line (contorni)
       if(l.type === 'line'){
-        try {
-          map.setPaintProperty(l.id,'line-color','#1980ff');
-        } catch(e){}
+        try { map.setPaintProperty(l.id,'line-color','#1980ff'); } catch(e){}
       }
     });
-
-    // 3. Aree montuose / vegetazione in verde:
-    //    Usiamo il source openmaptiles (presente nella style) e il layer "landcover" + rocce/glaciers.
-    //    Filtriamo alcune classi: forest, wood, grass, scrub, park, glacier, rock.
     const labelLayer = map.getStyle().layers.find(l => l.type === 'symbol' && l.layout && l.layout['text-field']);
     map.addLayer({
         id: 'mountain-green',
@@ -105,9 +83,8 @@
           'fill-color': [
             'match',
             ['get','class'],
-            'glacier', '#4fe3ff',      // ghiacciai azzurrini
-            'rock',    '#18763a',      // roccia leggermente più scura
-            /* default per vegetazione */
+            'glacier', '#4fe3ff',
+            'rock', '#18763a',
             '#0d7d35'
           ],
           'fill-opacity': [
@@ -120,25 +97,15 @@
       },
       labelLayer ? labelLayer.id : undefined
     );
-
-    // 4. Sovrappongo un leggero hillshade (se presente) colorato in verde scuro per dare profondità
-    //    Alcuni stili includono un layer hillshade (raster). Se esiste lo ritocco.
     const hillshade = map.getStyle().layers.find(l => /hillshade/.test(l.id));
     if(hillshade && hillshade.type === 'raster'){
-      // Non sempre è possibile cambiare direttamente i colori di un raster;
-      // alternativa: riduco l'opacità per non inquinare il verde.
       map.setPaintProperty(hillshade.id,'raster-opacity',0.25);
     }
-
-    // 5. Strade più scure (facoltativo – se vuoi accentuare il contrasto).
     map.getStyle().layers
-      .filter(l => l.type === 'line' && /road|highway|transport/.test(l['source-layer'] || '') )
+      .filter(l => l.type === 'line' && /road|highway|transport/.test(l['source-layer'] || ''))
       .forEach(l => {
-        try {
-          map.setPaintProperty(l.id,'line-color','#2a2a2a');
-        } catch(e){}
+        try { map.setPaintProperty(l.id,'line-color','#2a2a2a'); } catch(e){}
       });
-
   });
 
   map.on('move', updateCenterCoords);
