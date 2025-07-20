@@ -3,60 +3,86 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Mappa Leaflet Mare Blu Montagne Verdi</title>
+<title>Mappa Dark + Montagne e Parchi</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.css"/>
 <style>
 html,body{margin:0;padding:0;height:100%;background:#000;}
-#map{height:100vh;width:100%;position:relative;background:#000;}
-.center-box{position:absolute;top:50%;left:50%;width:12px;height:12px;background:#e7354a;transform:translate(-50%,-50%);box-shadow:0 0 8px #e7354a;pointer-events:none;z-index:500;}
+#map{position:relative;height:100vh;width:100%;}
+.center-box{position:absolute;top:50%;left:50%;width:12px;height:12px;background:#e7354a;transform:translate(-50%,-50%);pointer-events:none;z-index:500;box-shadow:0 0 8px #e7354a;}
 .coords{position:absolute;bottom:10px;left:10px;padding:6px 10px;font:13px monospace;color:#e7354a;background:rgba(0,0,0,.6);border-radius:4px;z-index:600;pointer-events:none;}
 .leaflet-container{background:#000;}
+.legend{position:absolute;top:10px;right:10px;z-index:700;font:12px sans-serif;background:rgba(0,0,0,.55);color:#ccc;padding:8px 10px;border-radius:4px;line-height:1.3;}
+.legend span{display:inline-block;width:14px;height:14px;margin-right:6px;vertical-align:middle;border:1px solid #0f5;}
+.legend .peak{background:#e7354a;border-color:#e7354a;}
 </style>
 </head>
 <body>
 <div id="map">
   <div class="center-box"></div>
   <div id="coordBox" class="coords">Lat: –, Lng: –</div>
+  <div class="legend">
+    <div><span style="background:rgba(0,128,50,.35);border-color:#0f5;"></span>Parchi / Aree protette</div>
+    <div><span class="peak"></span>Vette (natural=peak)</div>
+  </div>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.18/leaflet-maplibre-gl.js"></script>
+<script src="https://unpkg.com/osmtogeojson@3.0.0/osmtogeojson.js"></script>
 <script>
-const map=L.map('map',{center:[43.77,11.25],zoom:7,zoomControl:true,minZoom:2});
+const map=L.map('map',{center:[43.77,11.25],zoom:7,minZoom:2});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+const hillshade=L.tileLayer('https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png',{opacity:0.25,attribution:'Hillshade: Wikimedia'});
+hillshade.addTo(map);
 const coordBox=document.getElementById('coordBox');
 function upd(){const c=map.getCenter();coordBox.textContent=`Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;}
-map.on('move',upd);
-map.whenReady(upd);
-const glLayer=L.maplibreGL({
-  style:'https://demotiles.maplibre.org/style.json',
-  interactive:false
-}).addTo(map);
-glLayer.on('load',()=>{
-  const ml=glLayer.getMaplibreMap();
-  ml.getStyle().layers.filter(l=>l.type==='background').forEach(l=>ml.setPaintProperty(l.id,'background-color','#000'));
-  ml.getStyle().layers.filter(l=>/water/.test(l.id)).forEach(l=>{
-    if(l.type==='fill'){ml.setPaintProperty(l.id,'fill-color','#0d55c9');ml.setPaintProperty(l.id,'fill-opacity',1);}
-    if(l.type==='line'){try{ml.setPaintProperty(l.id,'line-color','#1980ff');}catch(e){}}
-  });
-  const labelLayer=ml.getStyle().layers.find(l=>l.type==='symbol'&&l.layout&&l.layout['text-field']);
-  if(!ml.getLayer('veg')){
-    try{
-      ml.addLayer({
-        id:'veg',
-        type:'fill',
-        source:Object.keys(ml.getStyle().sources)[0],
-        'source-layer':'landcover',
-        filter:['in','class','forest','wood','grass','scrub','park','rock','glacier'],
-        paint:{
-          'fill-color':['match',['get','class'],'glacier','#4fe3ff','rock','#18763a','#0d7d35'],
-          'fill-opacity':['interpolate',['linear'],['zoom'],5,0.35,8,0.5,12,0.6]
+map.on('move',upd);map.whenReady(upd);
+let parksLayer=null;
+let peaksLayer=null;
+let fetchTimeout=null;
+let lastBBox=null;
+function fetchData(){
+  if(map.getZoom()<8)return;
+  const b=map.getBounds();
+  const bbox=[b.getSouth(),b.getWest(),b.getNorth(),b.getEast()].map(v=>v.toFixed(5)).join(',');
+  if(bbox===lastBBox)return;
+  lastBBox=bbox;
+  const query=`[out:json][timeout:25];(
+    node["natural"="peak"](${bbox});
+    way["leisure"="park"](${bbox});
+    relation["leisure"="park"](${bbox});
+    way["boundary"="protected_area"](${bbox});
+    relation["boundary"="protected_area"](${bbox});
+  );out body;>;out skel qt;`;
+  fetch('https://overpass-api.de/api/interpreter',{method:'POST',body:query})
+    .then(r=>r.json())
+    .then(data=>{
+      const gj=osmtogeojson(data);
+      const parks={type:'FeatureCollection',features:gj.features.filter(f=>{
+        const t=f.properties||{};
+        return ['park','protected_area','nature_reserve'].some(k=>t.leisure===k||t.boundary===k||t.protect_class);
+      }).filter(f=>f.geometry && (f.geometry.type==='Polygon'||f.geometry.type==='MultiPolygon'))};
+      const peaks={type:'FeatureCollection',features:gj.features.filter(f=>{
+        const t=f.properties||{};
+        return t.natural==='peak' && f.geometry && f.geometry.type==='Point';
+      })};
+      if(parksLayer){parksLayer.clearLayers();}
+      if(peaksLayer){peaksLayer.clearLayers();}
+      parksLayer=L.geoJSON(parks,{
+        style:()=>({color:'#0f5',weight:1,opacity:0.7,fillColor:'rgba(0,128,50,0.35)',fillOpacity:0.35})
+      }).addTo(map);
+      peaksLayer=L.geoJSON(peaks,{
+        pointToLayer:(f,latlng)=>{
+          return L.circleMarker(latlng,{radius:4,fillColor:'#e7354a',color:'#e7354a',weight:1,fillOpacity:0.9});
         }
-      },labelLayer?labelLayer.id:undefined);
-    }catch(e){}
-  }
-});
-window.addEventListener('resize',()=>map.invalidateSize());
+      }).addTo(map);
+    })
+    .catch(e=>{});
+}
+function scheduleFetch(){
+  if(fetchTimeout)clearTimeout(fetchTimeout);
+  fetchTimeout=setTimeout(fetchData,400);
+}
+map.on('moveend',scheduleFetch);
+map.whenReady(scheduleFetch);
 </script>
 </body>
 </html>
