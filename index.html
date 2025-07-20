@@ -1,116 +1,48 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Mappa personalizzata</title>
-<link href="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.css" rel="stylesheet">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mappa Interattiva</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  html,body {height:100%; margin:0; padding:0; background:#000;}
-  #map {position:absolute; inset:0;}
-  .coord-box{
-    position:absolute; left:10px; bottom:10px;
-    font:13px/1.3 monospace;
-    background:rgba(0,0,0,.6);
-    color:#e7354a;
-    padding:6px 10px;
-    border-radius:4px;
-    z-index:10;
-    pointer-events:none;
-    user-select:none;
+  html,body { margin:0; padding:0; height:100% }
+  #map { position:relative; height:100vh; width:100% }
+  .coords {
+    position:absolute; bottom:10px; left:10px;
+    padding:6px 10px; font:13px monospace;
+    color:rgb(231,53,74); background:rgba(0,0,0,0.6);
+    border-radius:4px; z-index:1000;
   }
-  .center-box{
+  .center-box {
     position:absolute; top:50%; left:50%;
     width:12px; height:12px;
-    background:#e7354a;
+    background:rgb(231,53,74);
     transform:translate(-50%,-50%);
-    box-shadow:0 0 8px #e7354a;
-    z-index:5;
-    pointer-events:none;
-  }
-  .maplibregl-ctrl-logo { display:none !important; }
-  .maplibregl-ctrl-attrib {
-    background:rgba(0,0,0,.55);
-    font-size:11px;
+    pointer-events:none; z-index:999;
   }
 </style>
 </head>
 <body>
-<div id="map"></div>
-<div class="center-box"></div>
-<div id="coords" class="coord-box">Lat: –, Lng: –</div>
-<script src="https://unpkg.com/maplibre-gl@3.5.2/dist/maplibre-gl.js"></script>
-<script>
-  const map = new maplibregl.Map({
-    container: 'map',
-    style: 'https://api.maptiler.com/maps/dark/style.json?key=YOUR_MAPTILER_KEY',
-    center: [11.25, 43.77],
-    zoom: 7,
-    pitch: 0,
-    attributionControl: true
-  });
-
-  const coordBox = document.getElementById('coords');
-  function updateCenterCoords(){
-    const c = map.getCenter();
-    coordBox.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
-  }
-
-  map.on('load', () => {
-    updateCenterCoords();
-    const bgLayer = map.getStyle().layers.find(l => l.type === 'background');
-    if(bgLayer){
-      map.setPaintProperty(bgLayer.id, 'background-color', '#000000');
+  <div id="map">
+    <div class="center-box"></div>
+    <div id="coordBox" class="coords">Lat: –, Lng: –</div>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-providers/leaflet-providers.js"></script>
+  <script>
+    const map = L.map('map').setView([43.77,11.25],7);
+    L.tileLayer.provider('CartoDB.DarkMatter').addTo(map);
+    const box = document.getElementById('coordBox');
+    function update(){
+      const c = map.getCenter();
+      box.textContent = `Lat: ${c.lat.toFixed(5)}, Lng: ${c.lng.toFixed(5)}`;
     }
-    const waterLayers = map.getStyle().layers.filter(l => (l.type === 'fill' || l.type === 'line') && /water/.test(l.id));
-    waterLayers.forEach(l => {
-      if(l.type === 'fill'){
-        map.setPaintProperty(l.id,'fill-color','#0d55c9');
-        map.setPaintProperty(l.id,'fill-opacity',1);
-      }
-      if(l.type === 'line'){
-        try { map.setPaintProperty(l.id,'line-color','#1980ff'); } catch(e){}
-      }
+    map.whenReady(()=>{
+      update();
+      map.on('move', update);
     });
-    const labelLayer = map.getStyle().layers.find(l => l.type === 'symbol' && l.layout && l.layout['text-field']);
-    map.addLayer({
-        id: 'mountain-green',
-        type: 'fill',
-        source: 'openmaptiles',
-        'source-layer': 'landcover',
-        filter: ['in','class','forest','wood','grass','scrub','park','glacier','rock'],
-        paint: {
-          'fill-color': [
-            'match',
-            ['get','class'],
-            'glacier', '#4fe3ff',
-            'rock', '#18763a',
-            '#0d7d35'
-          ],
-          'fill-opacity': [
-            'interpolate',['linear'],['zoom'],
-            5, 0.35,
-            8, 0.50,
-            12, 0.60
-          ]
-        }
-      },
-      labelLayer ? labelLayer.id : undefined
-    );
-    const hillshade = map.getStyle().layers.find(l => /hillshade/.test(l.id));
-    if(hillshade && hillshade.type === 'raster'){
-      map.setPaintProperty(hillshade.id,'raster-opacity',0.25);
-    }
-    map.getStyle().layers
-      .filter(l => l.type === 'line' && /road|highway|transport/.test(l['source-layer'] || ''))
-      .forEach(l => {
-        try { map.setPaintProperty(l.id,'line-color','#2a2a2a'); } catch(e){}
-      });
-  });
-
-  map.on('move', updateCenterCoords);
-  map.on('moveend', updateCenterCoords);
-  window.addEventListener('resize', () => map.resize());
-</script>
+    window.addEventListener('load', ()=>setTimeout(()=>map.invalidateSize(),150));
+  </script>
 </body>
 </html>
